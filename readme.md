@@ -28,14 +28,14 @@
 * On command prompt/anaconda/terminal, type and enter `python3 minesweeperGameEngine.py`. Depending on how you installed python, if that does not work, try `python minesweeperGameEngine.py`. A GUI should appear, and clicking either button will run through the algorithm. 
   *  You can also run, for example, `python3 minesweeperGameEngine.py -f deterministic_board.json`, which will use that json file. The default is `test_board.json`
 * On command prompt/anaconda/terminal, type and enter `python3 minesweeperPerformanceTest.py`. Depending on how you installed python, if that does not work, try `python minesweeperPerformanceTest.py`. No GUI will appear, but some games will be automatically ran, and you will get a quick summary of how many were won and lost.
-  * You can also run, for example, `python3 minesweeperPerformanceTest.py -r 15 -c 16 -b 17 -safe 0 3 -type 1 -numgames 10 `, which indicates 10 randomly generated gameboard of size $15 \times 16$ with 17 bombs and a safe square of (0, 3). Each gameboard will be solved independently using your first (1) algorithm.
+  * You can also run, for example, `python3 minesweeperPerformanceTest.py -g 15 16 17 0 3 1 10 `, which indicates 10 randomly generated gameboard of size $15 \times 16$ with 17 bombs and a safe square of (0, 3). Each gameboard will be solved independently using your first (1) algorithm.
+  * You run also run, for example, `python3 minesweeperPerformanceTest.py -f deterministic_board.json 2`, which will use the given board json and your second (2) algorithm.  
 
 ## AI code specifications
 
 * Please use the comments, the sample AI, and print statements to help understand the format, but briefly, you will be given the current state of the game board and must decide whether to:
   * 1) open up another square
   * 2) submit your answer (the locations of all bombs) 
-* The game can end in 3 ways:
-  * you opened a square and it was a bomb (LOST)
-  * you returned a list of bomb locations, but the number of bombs were less than expected or some location was wrong (LOST)
-  * you returned a list of bomb locations, and the list was correct (WON)
+* The game can end in 2 ways:
+  * you returned a list of bomb locations, but the set of bombs did not match the real locations of the bombs (incorrect)
+  * you returned a list of bomb locations, and the list matched the real locations of the bombs (correct)

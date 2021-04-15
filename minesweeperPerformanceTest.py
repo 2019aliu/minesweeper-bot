@@ -5,15 +5,15 @@ from tkinter import *
 import random, argparse
 import minesweeperAI1 
 import minesweeperAI2
-
+import time
+import json
 
 # Here, we are creating our class, Window, and inheriting from the Frame
 # class. Frame is a class from the tkinter module. (see Lib/tkinter/__init__)
 class Window(Frame):
 
     # Define settings upon initialization. Here you can specify
-    def __init__(self, numRows, numCols, numBombs, safeSquare, AIType, master=None):
-        
+    def __init__(self, master=None):
         # parameters that you want to send through the Frame class. 
         Frame.__init__(self, master)   
 
@@ -22,7 +22,9 @@ class Window(Frame):
 
         #with that, we want to then run init_window, which doesn't yet exist
         self.outcome = 0
+        self.time = 0
 
+    def setupGenerate(self, numRows, numCols, numBombs, safeSquare, AIType):
         # game variables that can be accessed in any method in the class. For example, to access the number of rows, use "self.numRows" 
         self.numRows = numRows
         self.numCols = numCols
@@ -30,10 +32,29 @@ class Window(Frame):
         self.safeSquare = safeSquare
         self.AIType = AIType
 
-        self.init_window()
+        self.init_window(0)
+
+    def setupFile(self, testcase_filename, AIType):
+        
+        # game variables that can be accessed in any method in the class. For example, to access the number of rows, use "self.numRows" 
+        with open(testcase_filename) as fp:
+            data = json.load(fp)
+        
+        boardSize = data['dim'].split(',')
+        safe = data['safe'].split(',')
+
+        # game variables that can be accessed in any method in the class. For example, to access the number of rows, use "self.numRows"         
+        self.numRows = int(boardSize[0])
+        self.numCols = int(boardSize[1])
+        self.numBombs = int(data['bombs'])
+        self.safeSquare = (int(safe[0]), int(safe[1]))
+        self.AIType = AIType
+        self.gridInput = data['board']
+
+        self.init_window(1)
 
     # Creation of init_window
-    def init_window(self):
+    def init_window(self, runMethod):
         # changing the title of our master widget      
         self.master.title("Minesweeper")
 
@@ -48,7 +69,14 @@ class Window(Frame):
                 curRow[col].grid(row=row, column=col)
             self.button.append(curRow)
 
-        self.generate_board()
+        if runMethod == 0:
+            self.generate_board()
+        elif runMethod == 1:
+            self.create_board()
+        else:
+            print('Invalid format!')
+            exit()
+
         AIAlgo1Button = Button(self, bg="blue", text="AI 1", width=6, height=5, command=self.AIAlgo)
         AIAlgo1Button.place(x=600, y=150)
 
@@ -76,12 +104,8 @@ class Window(Frame):
             self.button[r][c]["text"] = self.ans[r][c]
             self.button[r][c]["bg"] = "white"
         else:
+            self.button[r][c]["text"] = self.ans[r][c]
             self.button[r][c]["bg"] = "red"
-            if self.outcome == 0:
-                self.outcome = -1
-
-        if self.outcome != 0:
-            root.destroy()
 
     # (helper function): return true if and only if all non-bomb squares have been uncovered (game is won) 
     def isGameWon(self):
@@ -164,6 +188,21 @@ class Window(Frame):
                 output = output + str(val)
         print(output)
 
+    # generate a board based on test case input
+    def create_board(self):
+
+        self.ans = np.full((self.numRows, self.numCols), 0)
+        self.bombLocations = []
+        # Add numbers 0-8 to the ans grid 
+        for row in range(self.numRows):
+            for col in range(self.numCols):
+                self.ans[row][col] = self.gridInput[row * self.numCols + col]
+                if self.ans[row][col] == 9:
+                    self.bombLocations.append((row, col))
+
+        print(f"starting board\n{self.ans}")
+        print(f"location of bombs: {self.bombLocations}")        
+
     # parse the user's command and perform the appropriate action.
     def parseAIAlgo(self, userCommand):
         if type(userCommand) is not tuple:
@@ -173,13 +212,14 @@ class Window(Frame):
             self.highlight_button(self.nextSquareToOpen)
         elif "final_answer" in userCommand[0]:
             userAnswer = userCommand[1]
+            self.numDigs = np.count_nonzero(self.getBoardState() != -1)
             if set(self.bombLocations) == set(userAnswer):
                 self.outcome = 1
-                numDigs = np.count_nonzero(self.getBoardState() != -1)
-                print(f"YOU WON! You performed {numDigs} digs")
+                print(f"CORRECT BOMB LIST! You performed {self.numDigs} digs.")
             else:
                 self.outcome = -1
-                print(f"WRONG BOMB LIST. expected: {self.bombLocations}, received: {userAnswer}")
+                print(f"WRONG BOMB LIST. expected: {self.bombLocations}, received: {userAnswer}. You performed {self.numDigs} digs.")
+
             root.destroy()
 
     """
@@ -201,44 +241,67 @@ class Window(Frame):
             return # game is already over (won or loss)
 
         boardState = self.getBoardState()
+        
+        startTime = time.time()
         userCommand = self.AI.performAI(boardState)
-        self.parseAIAlgo(userCommand)      
+        endTime = time.time()
+        self.time += (endTime - startTime)
+
+        self.parseAIAlgo(userCommand)
 
         if self.outcome == 0:
             self.AIAlgo()
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-r', default = 10, type=int, help='number of rows on the board')
-parser.add_argument('-c', default = 10, type=int, help='number of cols on the board')
-parser.add_argument('-b', default = 10, type=int, help='number of bombs on the board')
-parser.add_argument('-safe', default = [0, 0], nargs='+', type=int, help='the safe square on the board: (r, c)')
-parser.add_argument('-type', default = 1, type=int, help='the AI to use (1 or 2)')
-parser.add_argument('-numgames', default = 10, type=int, help='the number of games to play')
-args = parser.parse_args()
 
-numGames = args.numgames
+if len(sys.argv) < 2:
+    print("usage: -f <file_name.json> <algo_type>, or -g <x_dim> <y_dim> <num_bombs> <safe_x> <safe_y> <algo_type> <num_games>")
 
-numWins = 0
-numLosses = 0
-for i in range(numGames):
-    print(f"match={i+1}")
+elif sys.argv[1] in ["--generate", "-g"] and len(sys.argv) == 9:
+    numGames = int(sys.argv[8])
+    numWins = 0
+    numLosses = 0
+    totalDigs = 0
+    totalTime = 0
+
+    for i in range(numGames):
+        print(f"match={i+1}")
+        root = Tk()
+        root.geometry("800x800")
+        
+        app = Window(master = root)
+        app.setupGenerate(numRows = int(sys.argv[2]), numCols = int(sys.argv[3]), numBombs = int(sys.argv[4]), safeSquare = (int(sys.argv[5]), int(sys.argv[6])), AIType = int(sys.argv[7]))
+        root.mainloop()
+
+        outcome = "ERROR"
+        totalDigs += app.numDigs
+        totalTime += app.time
+        if app.outcome == -1: 
+            outcome = "Incorrect Bomb List"
+            numLosses += 1
+        elif app.outcome == 1:
+            outcome = "Correct Bomb List"
+            numWins += 1
+
+        print("\n************\n")
+
+    print(f"totalDigs={totalDigs}, averageDigs={totalDigs/numGames}, totalTime={round(totalTime, 3)}, averageTime={round(totalTime/numGames, 3)}, numberOfTimeCorrectBombListReturned={numWins}, numberOfTimeIncorrectBombListReturned={numLosses}")    
+
+elif sys.argv[1] in ["--file", "-f"] and len(sys.argv) == 4:
     root = Tk()
     root.geometry("800x800")
     
-    app = Window(numRows = args.r, numCols = args.c, numBombs = args.b, safeSquare = tuple(args.safe), AIType = args.type, master = root)
-    root.mainloop()
+    app = Window(master = root)
+    app.setupFile(testcase_filename = sys.argv[2], AIType = int(sys.argv[3]))
+    root.mainloop()    
 
     outcome = "ERROR"
     if app.outcome == -1: 
-        outcome = "LOSS"
-        numLosses += 1
+        outcome = "Incorrect Bomb List"
     elif app.outcome == 1:
-        outcome = "WON"
-        numWins += 1
+        outcome = "Correct Bomb List"
 
-    print(f"outcome={outcome}")
-    print("\n************\n")
-    
-print(f"totalWins={numWins}, totalLosses={numLosses}, winPercentage={numWins/numGames}")
+    print(f"totalDigs={app.numDigs}, totalTime={round(app.time, 3)}, outcome={outcome}")    
 
+else:
+    print("usage: -f <file_name.json> <algo_type>, or -g <x_dim> <y_dim> <num_bombs> <safe_x> <safe_y> <algo_type> <num_games>")

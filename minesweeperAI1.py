@@ -27,15 +27,18 @@ class AI1():
 
         # find all the unopened squares
         unopenedSquares = []
+        bombsFoundSoFar = []
         for row in range(self.numRows):
             for col in range(self.numCols):
                 if boardState[row][col] == -1:
                     unopenedSquares.append((row, col))
+                elif boardState[row][col] == 9:
+                    bombsFoundSoFar.append((row, col))
 
-        if len(unopenedSquares) == self.numBombs:
+        if len(bombsFoundSoFar) == self.numBombs:
             # If the number of unopened squares is equal to the number of bombs, all squares must be bombs, and we can submit our answer
-            print(f"List of bombs is {unopenedSquares}")
-            return self.submit_final_answer_format(unopenedSquares)
+            print(f"List of bombs is {bombsFoundSoFar}")
+            return self.submit_final_answer_format(bombsFoundSoFar)
         else:
             # Otherwise, pick a random square and open it      
             squareToOpen = random.choice(unopenedSquares)

@@ -79,16 +79,8 @@ class Window(Frame):
             self.button[r][c]["text"] = self.ans[r][c]
             self.button[r][c]["bg"] = "white"
         else:
+            self.button[r][c]["text"] = self.ans[r][c]
             self.button[r][c]["bg"] = "red"
-            if self.outcome == 0:
-                self.outcome = -1
-
-        if self.outcome != 0:
-            #write to file (won or loss)
-            if self.outcome == 1:
-                print("Game WON!")
-            else:
-                print("YOU LOST! You mined a bomb :(")
 
     # (helper function): return true if and only if all non-bomb squares have been uncovered (game is won) 
     def isGameWon(self):
@@ -151,13 +143,13 @@ class Window(Frame):
             self.highlight_button(self.nextSquareToOpen)
         elif "final_answer" in userCommand[0]:
             userAnswer = userCommand[1]
+            self.numDigs = np.count_nonzero(self.getBoardState() != -1)
             if set(self.bombLocations) == set(userAnswer):
                 self.outcome = 1
-                numDigs = np.count_nonzero(self.getBoardState() != -1)
-                print(f"YOU WON! You performed {numDigs} digs")
+                print(f"CORRECT BOMB LIST! You performed {self.numDigs} digs")
             else:
                 self.outcome = -1
-                print(f"WRONG BOMB LIST. expected: {self.bombLocations}, received: {userAnswer}")
+                print(f"WRONG BOMB LIST. expected: {self.bombLocations}, received: {userAnswer}. You performed {self.numDigs} digs")
 
     """
     Each time you click the button, We would recommend you to perform the following loop in your algorithm:
