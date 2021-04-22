@@ -253,9 +253,12 @@ class Window(Frame):
             self.AIAlgo()
 
 
+print(sys.argv)
+
+""" import minesweeper game engine etc """
 
 if len(sys.argv) < 2:
-    print("usage: -f <file_name.json> <algo_type>, or -g <x_dim> <y_dim> <num_bombs> <safe_x> <safe_y> <algo_type> <num_games>")
+    print("usage: -f <file_name.json> <algoType>, or -g <x_dim> <y_dim> <num_bombs> <safe_x> <safe_y> <algoType> <numGames>")
 
 elif sys.argv[1] in ["--generate", "-g"] and len(sys.argv) == 9:
     numGames = int(sys.argv[8])
@@ -304,4 +307,4 @@ elif sys.argv[1] in ["--file", "-f"] and len(sys.argv) == 4:
     print(f"totalDigs={app.numDigs}, totalTime={round(app.time, 3)}, outcome={outcome}")    
 
 else:
-    print("usage: -f <file_name.json> <algo_type>, or -g <x_dim> <y_dim> <num_bombs> <safe_x> <safe_y> <algo_type> <num_games>")
+    print("usage: -f <file_name.json> <algoType>, or -g <x_dim> <y_dim> <num_bombs> <safe_x> <safe_y> <algoType> <numGames>")
