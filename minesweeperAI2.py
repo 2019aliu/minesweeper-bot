@@ -130,7 +130,6 @@ class AI2():
 
             # Last resort is to pick a random square on the grid.
             # Make sure the random square isn't one that you know isn't a bomb
-            #squareToOpen = random.choice(list(set(unopenedSquares).difference(self.dontOpen)))
             squareToOpen = random.choice(unopenedSquares)
             while squareToOpen in self.dontOpen:
                 squareToOpen = random.choice(unopenedSquares)
